@@ -6,10 +6,14 @@ const EMAILJS_SERVICE_ID  = 'service_xntm5qq';
 const EMAILJS_TEMPLATE_ID = 'template_b3fwife';
 const EMAILJS_PUBLIC_KEY  = 'wT8m-90ZGx11yCGbH';
 
+// ─── ImgBB Config (free photo hosting)
+// Get your free API key at: https://api.imgbb.com
+const IMGBB_API_KEY = 'b12acdd8359860f4340208987cd53256';
+
 // ─── Property email routing ────────────────────────────────────────
 const PROPERTY_EMAILS = {
-  'Embrey':        'dtownes@queencityelite.com',
-  'Optimist Hall': 'dtownes@queencityelite.com',
+  'Embrey':        'hleake@queencityelite.com, dtownes@queencityelite.com',
+  'Optimist Hall': 'hleake@queencityelite.com, dtownes@queencityelite.com',
 };
 
 const NAVY   = '#0D2B55';
@@ -186,9 +190,9 @@ export default function App() {
 
   // ── Photo log rows ───────────────────────────────────────────────
   const [photoRows, setPhotoRows] = useState([
-    { id: 1, time: '', location: '', description: '', fileName: '' },
-    { id: 2, time: '', location: '', description: '', fileName: '' },
-    { id: 3, time: '', location: '', description: '', fileName: '' },
+    { id: 1, time: '', location: '', description: '', fileName: '', previewUrl: null, uploadedUrl: null, uploading: false, uploadError: null },
+    { id: 2, time: '', location: '', description: '', fileName: '', previewUrl: null, uploadedUrl: null, uploading: false, uploadError: null },
+    { id: 3, time: '', location: '', description: '', fileName: '', previewUrl: null, uploadedUrl: null, uploading: false, uploadError: null },
   ]);
 
   // ── Send state ───────────────────────────────────────────────────
@@ -209,9 +213,36 @@ export default function App() {
   const updatePhoto = (id, field, val) =>
     setPhotoRows(r => r.map(row => row.id === id ? { ...row, [field]: val } : row));
   const addPhotoRow = () =>
-    setPhotoRows(r => [...r, { id: Date.now(), time: '', location: '', description: '', fileName: '' }]);
+    setPhotoRows(r => [...r, { id: Date.now(), time: '', location: '', description: '', fileName: '', previewUrl: null, uploadedUrl: null, uploading: false, uploadError: null }]);
   const removePhotoRow = (id) =>
     setPhotoRows(r => r.length > 1 ? r.filter(row => row.id !== id) : r);
+
+  const handlePhotoUpload = async (id, file) => {
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setPhotoRows(r => r.map(row => row.id === id
+      ? { ...row, fileName: file.name, previewUrl, uploading: true, uploadError: null, uploadedUrl: null }
+      : row));
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: 'POST', body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPhotoRows(r => r.map(row => row.id === id
+          ? { ...row, uploadedUrl: data.data.url, uploading: false }
+          : row));
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch {
+      setPhotoRows(r => r.map(row => row.id === id
+        ? { ...row, uploading: false, uploadError: 'Upload failed. Check your ImgBB API key.' }
+        : row));
+    }
+  };
 
   const toggleObs  = (k) => setObservations(p => ({ ...p, [k]: !p[k] }));
   const toggleAct  = (k) => setActions(p => ({ ...p, [k]: !p[k] }));
@@ -238,8 +269,8 @@ export default function App() {
       .map(r => `  ${r.time || '--:--'} | ${r.location || '—'} | ${r.activity}`)
       .join('\n');
     const photoStr = photoRows
-      .filter(r => r.time || r.description)
-      .map((r, i) => `  #${i+1}: ${r.time} | ${r.location} | ${r.description} | ${r.fileName}`)
+      .filter(r => r.time || r.description || r.uploadedUrl)
+      .map((r, i) => `  #${i+1}: ${r.time || '--:--'} | ${r.location || '—'} | ${r.description || '—'} | ${r.fileName || '—'}${r.uploadedUrl ? '\n        View: ' + r.uploadedUrl : ''}`)
       .join('\n');
 
     return `
@@ -342,7 +373,7 @@ Submitted via QCE Security Shift Report System
     setActionsNotes('');
     setRecs(Object.fromEntries(Object.keys(recs).map(k => [k, false])));
     setRecsNotes('');
-    setPhotoRows([{ id:1, time:'', location:'', description:'', fileName:'' },{ id:2, time:'', location:'', description:'', fileName:'' },{ id:3, time:'', location:'', description:'', fileName:'' }]);
+    setPhotoRows([{ id:1, time:'', location:'', description:'', fileName:'', previewUrl:null, uploadedUrl:null, uploading:false, uploadError:null },{ id:2, time:'', location:'', description:'', fileName:'', previewUrl:null, uploadedUrl:null, uploading:false, uploadError:null },{ id:3, time:'', location:'', description:'', fileName:'', previewUrl:null, uploadedUrl:null, uploading:false, uploadError:null }]);
     setSendMsg(null);
     setErrors({});
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -634,28 +665,71 @@ Submitted via QCE Security Shift Report System
           <div style={card} className="fade-in">
             <div style={sectionHead}><span style={{ fontSize: 16 }}>📷</span> SECTION 7 — PHOTO DOCUMENTATION</div>
             <div style={{ padding: '18px 20px' }}>
-              <p style={{ fontSize: 12, color: MUTED, marginBottom: 12, fontStyle: 'italic' }}>
-                Log all photos taken during this shift. Required for: unsecured entry points, property damage, hazardous conditions, suspicious activity, or any escalated incident. Upload photos separately to your property folder.
+              <p style={{ fontSize: 12, color: MUTED, marginBottom: 14, fontStyle: 'italic' }}>
+                Upload photos taken during this shift. Required for: unsecured entry points, property damage, hazardous conditions, suspicious activity, or any escalated incident. Photos will be uploaded to a secure link and included in the emailed report.
               </p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '100px 140px 1fr 150px 36px', gap: 6, marginBottom: 6 }}>
-                {['TIME', 'LOCATION', 'DESCRIPTION', 'FILE NAME', ''].map((h, i) => (
-                  <div key={i} style={{ fontSize: 10, fontWeight: 700, color: NAVY, letterSpacing: '0.08em', padding: '4px 0' }}>{h}</div>
-                ))}
-              </div>
-
               {photoRows.map((row, idx) => (
-                <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '100px 140px 1fr 150px 36px', gap: 6, marginBottom: 6, alignItems: 'start', background: idx % 2 === 0 ? WHITE : GRAY, borderRadius: 6, padding: '4px 4px' }}>
-                  <input style={{ ...input, padding: '8px 8px', background: 'transparent', fontSize: 13 }} type="time" value={row.time} onChange={e => updatePhoto(row.id, 'time', e.target.value)} />
-                  <input style={{ ...input, padding: '8px 8px', background: 'transparent', fontSize: 13 }} type="text" placeholder="Zone / Area" value={row.location} onChange={e => updatePhoto(row.id, 'location', e.target.value)} />
-                  <input style={{ ...input, padding: '8px 8px', background: 'transparent', fontSize: 13 }} type="text" placeholder="What the photo shows…" value={row.description} onChange={e => updatePhoto(row.id, 'description', e.target.value)} />
-                  <input style={{ ...input, padding: '8px 8px', background: 'transparent', fontSize: 13 }} type="text" placeholder="IMG_001.jpg" value={row.fileName} onChange={e => updatePhoto(row.id, 'fileName', e.target.value)} />
-                  <button onClick={() => removePhotoRow(row.id)} title="Remove row" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c0392b', fontSize: 18, lineHeight: 1, paddingTop: 8 }}>×</button>
+                <div key={row.id} style={{ background: idx % 2 === 0 ? WHITE : GRAY, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 14px 12px', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'flex-start' }}>
+                    {/* Photo number badge */}
+                    <div style={{ background: NAVY, color: GOLD, fontWeight: 800, fontSize: 13, width: 28, height: 28, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                      {idx + 1}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      {/* Upload button row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                        <label style={{ background: NAVY, color: GOLD, borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {row.uploading ? '⏳ Uploading…' : '📎 Choose Photo'}
+                          <input type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={e => handlePhotoUpload(row.id, e.target.files[0])} />
+                        </label>
+                        {row.uploadedUrl && (
+                          <a href={row.uploadedUrl} target="_blank" rel="noopener noreferrer"
+                            style={{ fontSize: 12, color: '#1a7040', fontWeight: 600, textDecoration: 'none', background: '#eafaf1', border: '1px solid #2ecc71', borderRadius: 5, padding: '5px 10px' }}>
+                            ✓ View Uploaded Photo ↗
+                          </a>
+                        )}
+                        {row.uploadError && (
+                          <span style={{ fontSize: 11, color: '#922b21', background: '#fdedec', border: '1px solid #e74c3c', borderRadius: 5, padding: '5px 10px' }}>
+                            ⚠ {row.uploadError}
+                          </span>
+                        )}
+                        {row.fileName && !row.uploadedUrl && !row.uploading && !row.uploadError && (
+                          <span style={{ fontSize: 12, color: MUTED }}>{row.fileName}</span>
+                        )}
+                        <button onClick={() => removePhotoRow(row.id)} title="Remove" style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#c0392b', fontSize: 20, lineHeight: 1, flexShrink: 0 }}>×</button>
+                      </div>
+
+                      {/* Preview thumbnail */}
+                      {row.previewUrl && (
+                        <div style={{ marginBottom: 10 }}>
+                          <img src={row.previewUrl} alt="preview" style={{ maxHeight: 120, maxWidth: '100%', borderRadius: 6, border: `2px solid ${row.uploadedUrl ? '#2ecc71' : BORDER}`, objectFit: 'cover' }} />
+                        </div>
+                      )}
+
+                      {/* Metadata fields */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr 1fr', gap: 8 }}>
+                        <div>
+                          <div style={{ ...label, marginBottom: 3 }}>Time Taken</div>
+                          <input style={{ ...input, padding: '7px 9px', fontSize: 13 }} type="time" value={row.time} onChange={e => updatePhoto(row.id, 'time', e.target.value)} />
+                        </div>
+                        <div>
+                          <div style={{ ...label, marginBottom: 3 }}>Location / Zone</div>
+                          <input style={{ ...input, padding: '7px 9px', fontSize: 13 }} type="text" placeholder="Zone / Area" value={row.location} onChange={e => updatePhoto(row.id, 'location', e.target.value)} />
+                        </div>
+                        <div>
+                          <div style={{ ...label, marginBottom: 3 }}>Description</div>
+                          <input style={{ ...input, padding: '7px 9px', fontSize: 13 }} type="text" placeholder="What the photo shows…" value={row.description} onChange={e => updatePhoto(row.id, 'description', e.target.value)} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
 
-              <button onClick={addPhotoRow} style={{ marginTop: 8, background: LNAVY, border: `1.5px dashed ${NAVY}`, color: NAVY, borderRadius: 6, padding: '8px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-                + Add Photo Row
+              <button onClick={addPhotoRow} style={{ marginTop: 4, background: LNAVY, border: `1.5px dashed ${NAVY}`, color: NAVY, borderRadius: 6, padding: '8px 18px', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
+                + Add Another Photo
               </button>
             </div>
           </div>
