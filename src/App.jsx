@@ -2,14 +2,14 @@ import React, { useState, useCallback } from 'react';
 import emailjs from '@emailjs/browser';
 
 // ─── EmailJS Config (replace with your credentials) ───────────────
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+const EMAILJS_SERVICE_ID  = 'service_xntm5qq';
+const EMAILJS_TEMPLATE_ID = 'template_b3fwife';
+const EMAILJS_PUBLIC_KEY  = 'wT8m-90ZGx11yCGbH';
 
 // ─── Property email routing ────────────────────────────────────────
 const PROPERTY_EMAILS = {
-  'Embrey':        'hleake@queencityelite.com, dtownes@queencityelite.com',
-  'Optimist Hall': 'hleake@queencityelite.com, dtownes@queencityelite.com',
+  'Embrey':        'dtownes@queencityelite.com',
+  'Optimist Hall': 'dtownes@queencityelite.com',
 };
 
 const NAVY   = '#0D2B55';
