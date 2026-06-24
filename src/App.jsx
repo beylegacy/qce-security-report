@@ -417,7 +417,10 @@ Submitted via QCE Security Shift Report System
                   <label style={{ ...label, color: errors.property ? '#c0392b' : NAVY }}>Property *</label>
                   <select style={{ ...select, borderColor: errors.property ? '#c0392b' : BORDER }} value={form.property} onChange={set('property')}>
                     <option value="">— Select Property —</option>
-                    <option>Embrey</option>
+                    <option>Hyatt Centric</option>
+                    <option>Ascent Uptown</option>
+                    <option>Hyatt Place</option>
+                    <option>Blu South</option>
                     <option>Optimist Hall</option>
                   </select>
                 </div>
