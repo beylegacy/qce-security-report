@@ -12,9 +12,9 @@ const IMGBB_API_KEY = 'b12acdd8359860f4340208987cd53256';
 
 // ─── Property email routing ────────────────────────────────────────
 const PROPERTY_EMAILS = {
-  'Embrey':        'hleake@queencityelite.com, dtownes@extremepropertyservices.com', 
-  'Blu South':     'hleake@queencityelite.com, dtownes@extremepropertyservices.com',
-  'Optimist Hall': 'hleake@queencityelite.com, dtownes@extremepropertyservices.com',
+  'Embrey':        'hleake@queencityelite.com, n.bey@queencityelite.com', 
+  'Blu South':     'hleake@queencityelite.com, n.bey@queencityelite.com',
+  'Optimist Hall': 'hleake@queencityelite.com, n.bey@queencityelite.com',
 };
 
 const NAVY   = '#0D2B55';
